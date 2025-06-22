@@ -1,0 +1,82 @@
+#FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+FROM nvidia/cuda:12.8.1-runtime-ubuntu24.04
+
+USER root
+
+# Install Python and Numpy
+
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+  python3-dev \
+  python3-pip \
+  python3-setuptools \
+  python3-wheel \
+  python3-yaml \
+  python3-typing-extensions \
+  python3-numpy && \
+  apt-get -y clean && \
+  rm -rf /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+
+# Install PyTorch dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    unzip \
+    libopenblas-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libv4l-dev \
+    libxvidcore-dev \
+    libx264-dev \
+    libatlas-base-dev \
+    gfortran \
+    libffi-dev \
+    wget cmake \
+    gcc g++ make \
+    libssl-dev \
+    git  build-essential pkg-config libcurl4-openssl-dev libcurl4 rsync libstb0t64 && \
+    apt-get -y clean && \
+    rm -rf /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+#RUN wget https://s3.nbfc.io/nbfc-assets/github/vaccel/rev/main/x86_64/release/vaccel_latest_amd64.deb && dpkg -i vaccel_latest_amd64.deb && rm vaccel_latest_amd64.deb && ldconfig
+
+
+#RUN mkdir build && cd build && cmake ../ -DCMAKE_PREFIX_PATH=/opt/pytorch && make
+# Install PyTorch
+ARG TORCH_VERSION=2.7.0
+ARG TORCH_PLATFORM="cpu"
+RUN zip_filename="libtorch-cxx11-abi-shared-with-deps-${TORCH_VERSION}%2B${TORCH_PLATFORM}.zip" && \
+    wget --progress=dot:mega -O libtorch.zip \
+        "https://download.pytorch.org/libtorch/${TORCH_PLATFORM}/${zip_filename}" && \
+    unzip libtorch.zip && \
+    mv libtorch /opt/pytorch && \
+    rm -f libtorch.zip && \
+    echo "/opt/pytorch/lib" >> /etc/ld.so.conf && ldconfig
+
+RUN apt update && apt install -y libstb-dev &&     apt-get -y clean && \
+    rm -rf /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/* && ldconfig
+
+# Install vAccel
+RUN wget --progress=dot:mega \
+        https://s3.nbfc.io/nbfc-assets/github/vaccel/rev/main/x86_64/release/vaccel_latest_amd64.deb && \
+    apt install -y ./vaccel_latest_amd64.deb && \
+    rm -f vaccel_latest_amd64.deb && \
+    ldconfig
+
+# Install vAccel RPC agent
+RUN wget --no-check-certificate --progress=dot:mega \
+        https://s3.nbfc.io/nbfc-assets/github/vaccel/rust/rev/main/x86_64/release/vaccel-rpc-agent_latest_amd64.deb && \
+    apt install -y ./vaccel-rpc-agent_latest_amd64.deb  && \
+    rm -f vaccel-rpc-agent_latest_amd64.deb
+
+RUN wget https://s3.nbfc.io/nbfc-assets/github/vaccel/plugins/torch/rev/main/x86_64/debug/vaccel-torch-latest-bin.tar.gz && \
+    tar -zxv --strip-components=2 -f vaccel-torch-latest-bin.tar.gz -C /usr/local
+
+RUN echo "/opt/pytorch/lib" >> /etc/ld.so.conf.d/098-pytorch.conf && ldconfig
+ENV VACCEL_BACKENDS=/usr/local/lib/x86_64-linux-gnu/libvaccel-torch.so
+ENV LD_LIBRARY_PATH=/opt/pytorch/lib
+ENTRYPOINT ["/usr/bin/vaccel-rpc-agent", "-a", "unix:///var/run/vaccel/vaccel.sock"]
+

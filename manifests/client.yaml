@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+    name: vaccel-client
+spec:
+    containers:
+        - name: vaccel-client
+          image: harbor.nbfc.io/nubificus/vaccel-torch-bert-example:x86_64
+          command: ["./build/classifier"]
+          args: ["-m", "cnn_trace.pt", "-v", "bert_cased_vocab.txt", "-f", "/data/tweets.txt"]
+          env:
+              - name: VACCEL_RPC_ADDRESS
+                value: "tcp://vaccel-agent:8888"
+          volumeMounts:
+              - name: tweets
+                mountPath: /data
+    volumes:
+        - name: tweets
+          hostPath:
+            path: /tmp/data

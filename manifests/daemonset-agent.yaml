@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+    name: vaccel-agent
+spec:
+    selector:
+        matchLabels:
+            app: vaccel-agent
+    template:
+        metadata:
+            labels:
+                app: vaccel-agent
+        spec:
+            containers:
+                - name: vaccel-agent
+                  image: harbor.nbfc.io/nubificus/vaccel-torch-bert-example-agent:x86_64
+                  command: ["vaccel-rpc-agent"]
+                  args: ["-a", "tcp://0.0.0.0:8888"]
+                  ports:
+                      - containerPort: 8888
+                        name: rpc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaccel-agent
+  labels:
+    app: vaccel-agent
+spec:
+  ports:
+  - name: vaccel-agent
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    app: vaccel-agent
+  sessionAffinity: None
