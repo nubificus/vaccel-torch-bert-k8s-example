@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vaccel-client
+  template:
+    metadata:
+      labels:
+        app: vaccel-client
+    spec:
+    {{- if .Values.nodeName }}
+      nodeName: {{ .Values.nodeName }}
+    {{- end }}
+      containers:
+        - name: vaccel-client
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - >
+              while true; do
+                OMP_NUM_THREADS=1 ./build/classifier -m cnn_trace.pt -v bert_cased_vocab.txt -f /data/tweets.txt > /tmp/output.log 2>&1;
+                sleep 2;
+              done
+          env:
+            - name: VACCEL_RPC_ADDRESS
+              value: {{ .Values.rpcAddress | quote }}
+            - name: TTRPC_TCP_NODELAY_ENABLED
+              value: "1"
+          volumeMounts:
+            - name: tweets
+              mountPath: /data
+            - name: shared-logs
+              mountPath: /tmp
+        - name: log-exporter
+          image: {{ .Values.logExporter.repository }}:{{ .Values.logExporter.tag }}
+          imagePullPolicy: {{ .Values.logExporter.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.logExporter.port }}
+          volumeMounts:
+            - name: shared-logs
+              mountPath: /tmp
+      volumes:
+        - name: tweets
+          configMap:
+            name: tweets-config
+            items:
+              - key: tweets.txt
+                path: tweets.txt
+        - name: shared-logs
+          emptyDir: {}
+    

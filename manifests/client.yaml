@@ -2,19 +2,47 @@ apiVersion: v1
 kind: Pod
 metadata:
     name: vaccel-client
+    labels:
+      app: vaccel-client
+
 spec:
+    nodeName: drop00
     containers:
         - name: vaccel-client
           image: harbor.nbfc.io/nubificus/vaccel-torch-bert-example:x86_64
-          command: ["./build/classifier"]
-          args: ["-m", "cnn_trace.pt", "-v", "bert_cased_vocab.txt", "-f", "/data/tweets.txt"]
+          imagePullPolicy: Always
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - >
+              OMP_NUM_THREADS=1 ./build/classifier -m cnn_trace.pt -v bert_cased_vocab.txt -f /data/tweets.txt > /tmp/output.log 2>&1
+        
+              #command: ["./build/classifier"]
+              #args: ["-m", "cnn_trace.pt", "-v", "bert_cased_vocab.txt", "-f", "/data/tweets.txt", " > ", "/tmp/output.log",  " 2>&1 "]
           env:
+             #- name: VACCEL_RPC_ADDRESS
+             #    value: "tcp://vaccel-agent-gpu:8888"
               - name: VACCEL_RPC_ADDRESS
                 value: "tcp://vaccel-agent:8888"
+              - name: TTRPC_TCP_NODELAY_ENABLED
+                value: "1"
           volumeMounts:
               - name: tweets
                 mountPath: /data
+              - name: shared-logs
+                mountPath: /tmp
+        - name: log-exporter
+          image: harbor.nbfc.io/nubificus/log_exporter:x86_64
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9100
+          volumeMounts:
+            - name: shared-logs
+              mountPath: /tmp
+
     volumes:
         - name: tweets
           hostPath:
             path: /tmp/data
+        - name: shared-logs
+          emptyDir: {}

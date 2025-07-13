@@ -1,0 +1,4 @@
+apiVersion: v2
+name: vaccel-client
+version: 0.1.0
+description: Helm chart for vAccel Torch BERT example with sidecar metrics exporter

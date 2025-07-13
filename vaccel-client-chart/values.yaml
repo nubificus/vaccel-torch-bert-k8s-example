@@ -1,0 +1,21 @@
+image:
+  repository: harbor.nbfc.io/nubificus/vaccel-torch-bert-example
+  tag: x86_64
+  pullPolicy: Always
+
+logExporter:
+  repository: harbor.nbfc.io/nubificus/log_exporter
+  tag: x86_64
+  pullPolicy: Always
+  port: 9100
+
+rpcAddress: "tcp://vaccel-agent:8888"
+# Optional
+nodeName: ""
+
+tweetsFile: files/tweets.txt
+
+service:
+  type: NodePort
+  nodePort: 30910
+
