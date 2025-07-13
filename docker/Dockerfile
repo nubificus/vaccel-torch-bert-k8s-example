@@ -61,6 +61,7 @@ RUN wget --no-check-certificate --progress=dot:mega \
     rm -f vaccel-rpc_latest_amd64.deb
 
 RUN apt update && apt install -y pkg-config libcurl4-openssl-dev
+COPY . /app
 RUN mkdir -p build && \
     cd build && \
     cmake .. -DCMAKE_PREFIX_PATH=/opt/pytorch -DVACCEL=ON && \
