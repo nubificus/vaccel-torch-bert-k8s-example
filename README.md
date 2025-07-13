@@ -297,8 +297,35 @@ Line 5: Duration: 185.506 ms Prediction: neither
 ...
 ```
 
+## Helm chart
+
+Build chart:
+
+```
+helm package vaccel-client-chart
+```
+
+Push chart:
+
+```
+helm push vaccel-client-0.1.0.tgz oci://harbor.nbfc.io/nubificus/helm-charts
+```
+
+Install chart:
+
+```
+helm install vaccel-client oci://harbor.nbfc.io/nubificus/helm-charts/vaccel-client:0.1.0  --set rpcAddress="tcp://vaccel-agent:8888"
+```
+
+Upgrade chart:
+
+```
+helm upgrade --install vaccel-client oci://harbor.nbfc.io/nubificus/helm-charts/vaccel-client:0.1.0   --set rpcAddress="tcp://vaccel-agent-gpu:8888"
+```
+
 ## Next Steps
 
 - Customize your Torch model or plugin inside the client image
 - Test workloads in the sidecar first for simplified debugging
 - Scale via Deployment/Job or integrate with KNative
+
