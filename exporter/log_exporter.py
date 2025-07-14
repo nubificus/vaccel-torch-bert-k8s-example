@@ -1,16 +1,8 @@
-from prometheus_client import start_http_server, Gauge
-import time
-import re
-import os
+from prometheus_client import start_http_server, Summary
+import time, re, os
 
-DURATION_GAUGE = Gauge('vaccel_inference_duration_ms', 'Duration per inference line', ['line'])
-
+LATENCY = Summary('vaccel_inference_latency_ms', 'Inference latency in ms')
 LOG_FILE = '/tmp/output.log'
-
-def wait_for_file(filepath):
-    while not os.path.exists(filepath):
-        print(f"Waiting for {filepath}...")
-        time.sleep(0.5)
 
 def tail_log(filepath):
     with open(filepath, 'r') as f:
@@ -20,14 +12,13 @@ def tail_log(filepath):
             if not line:
                 time.sleep(0.1)
                 continue
-            match = re.search(r'Line (\d+): Duration: ([\d.]+) ms', line)
+            match = re.search(r'Line \d+: Duration: ([\d.]+) ms', line)
             if match:
-                line_number = match.group(1)
-                duration_ms = float(match.group(2))
-                DURATION_GAUGE.labels(line=line_number).set(duration_ms)
+                duration_ms = float(match.group(1))
+                LATENCY.observe(duration_ms)
 
 if __name__ == '__main__':
     start_http_server(9100)
-    wait_for_file(LOG_FILE)
+    while not os.path.exists(LOG_FILE):
+        time.sleep(0.5)
     tail_log(LOG_FILE)
-

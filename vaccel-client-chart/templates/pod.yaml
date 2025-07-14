@@ -24,7 +24,7 @@ spec:
             - "-c"
             - >
               while true; do
-                OMP_NUM_THREADS=1 ./build/classifier -m cnn_trace.pt -v bert_cased_vocab.txt -f /data/tweets.txt > /tmp/output.log 2>&1;
+                OMP_NUM_THREADS=1 ./build/classifier -m cnn_trace.pt -v bert_cased_vocab.txt -f /data/tweets.txt >> /tmp/output.log 2>&1;
                 sleep 2;
               done
           env:

@@ -79,6 +79,6 @@ RUN wget https://s3.nbfc.io/nbfc-assets/github/vaccel/plugins/torch/rev/main/x86
 RUN echo "/opt/pytorch/lib" >> /etc/ld.so.conf.d/098-pytorch.conf && ldconfig
 ENV VACCEL_BACKENDS=/usr/local/lib/x86_64-linux-gnu/libvaccel-torch.so
 ENV LD_LIBRARY_PATH=/opt/pytorch/lib
-#COPY libvaccel-torch.so /usr/local/lib/x86_64-linux-gnu/libvaccel-torch.so
+COPY libvaccel-torch.so /usr/local/lib/x86_64-linux-gnu/libvaccel-torch.so
 ENTRYPOINT ["/usr/bin/vaccel-rpc-agent", "-a", "unix:///var/run/vaccel/vaccel.sock"]
 
